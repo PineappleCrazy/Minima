@@ -78,25 +78,22 @@
             appearance: none;
         }
 
-        /* NEW: Flex container for Approach + Button */
         .input-group {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
 
-        /* Make select take up available space in the group */
         .input-group select {
-            margin-bottom: 0; /* Remove bottom margin inside group */
+            margin-bottom: 0;
             flex-grow: 1;
         }
 
-        /* The Magic Wand Button */
         .magic-btn {
-            display: none; /* Hidden until valid */
+            display: none;
             align-items: center;
             justify-content: center;
-            width: 46px; /* Square shape */
+            width: 46px;
             background: #2c2c2c;
             border: 1px solid var(--accent);
             border-radius: 6px;
@@ -112,7 +109,6 @@
             box-shadow: 0 0 10px rgba(72, 91, 171, 0.4);
         }
 
-        /* Spinner for the button */
         .magic-btn.loading {
             animation: spin 1s linear infinite;
             cursor: wait;
@@ -207,7 +203,6 @@
 </div>
 
 <script>
-    // Elements
     const airportSel = document.getElementById("airport");
     const runwaySel = document.getElementById("runway");
     const aircraftSel = document.getElementById("aircraft");
@@ -260,12 +255,9 @@
     }
 
     function updateUI() {
-        // Enable Check button only if all selected
         const allSelected = airportSel.value && runwaySel.value && aircraftSel.value && approachSel.value;
         checkBtn.disabled = !allSelected;
 
-        // Enable Magic Wand if Airport, Runway, and Aircraft are ready
-        // AND approaches have actually loaded (length > 1 because of default option)
         const canRecommend = airportSel.value && runwaySel.value && aircraftSel.value && approachSel.options.length > 1;
         magicWand.style.display = canRecommend ? "flex" : "none";
     }
@@ -273,7 +265,7 @@
     async function recommendApproach() {
         if(magicWand.classList.contains("loading")) return;
 
-        magicWand.classList.add("loading"); // Spin animation
+        magicWand.classList.add("loading");
 
         try {
             const res = await fetch("/recommend", {
@@ -289,8 +281,8 @@
 
             if (data.recommended) {
                 approachSel.value = data.recommended;
-                updateUI(); // Re-check button state
-                checkMinima(); // Auto-click check
+                updateUI(); 
+                // checkMinima(); <-- REMOVED THIS LINE
             } else if (data.error) {
                 alert("Error: " + data.error);
             }
