@@ -271,9 +271,7 @@
     
         approachSel.innerHTML = '<option value="">Select Approach</option>';
         approaches.forEach(ap => {
-            const option = new Option(ap.label, ap.value);
-            if (ap.recommended) option.selected = true; // AUTO-SELECT CAT1 if weather permits
-            approachSel.add(option);
+            approachSel.add(new Option(ap.label, ap.value));
         });
     
         approachSel.disabled = false;
@@ -362,6 +360,7 @@
     </footer>
 </body>
 </html>
+
 
 
 
