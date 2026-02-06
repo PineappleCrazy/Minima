@@ -237,7 +237,7 @@
             // Construct label: "EBOS (Ostend)" or just "EBOS" if no name
             let label = a.code;
             if (a.name && a.name.trim() !== "") {
-                label += ` - '${a.name}'`;
+                label += `  -  ${a.name}`;
             }
             airportSel.add(new Option(label, a.code));
         });
@@ -372,4 +372,5 @@
     </footer>
 </body>
 </html>
+
 
