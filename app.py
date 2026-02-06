@@ -37,7 +37,7 @@ def runways():
     runways = set()
 
     for key in data.keys():
-        m = re.search(r"(?:^|[a-z-])(\d{2}[LRC]?)", key)
+        m = re.search(r"(\d{2}[LRC]?)(?:-[a-z0-9]+)?$", key)
         if m:
             runways.add(m.group(1))
 
@@ -144,6 +144,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
