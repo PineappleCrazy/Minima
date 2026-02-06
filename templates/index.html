@@ -16,7 +16,359 @@
         }
 
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minima</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --accent: #485BAB; /* Your signature blue */
+            --accent-hover: #5a6fc4;
+            --error: #ff5252;
+            --border: #333;
+        }
+
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .info-box {
+            background: #2c2c2c;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            background: #252525;
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 6px;
+            appearance: none;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group select {
+            margin-bottom: 0;
+            flex-grow: 1;
+        }
+
+        /* UPDATED: Magic Button Styles */
+        .magic-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 46px;
+            background: #2c2c2c;
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .magic-icon {
+            width: 24px;
+            height: 24px;
+            background-color: var(--accent);
+            mask-image: url('suggest.png');
+            -webkit-mask-image: url('suggest.png');
+            mask-size: contain;
+            -webkit-mask-size: contain;
+            mask-repeat: no-repeat;
+            -webkit-mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-position: center;
+        }
+
+        .magic-btn:hover {
+            background: var(--accent);
+        }
+
+        .magic-btn:hover .magic-icon {
+            background-color: white;
+        }
+
+        .magic-btn.loading {
+            animation: spin 1s linear infinite;
+            cursor: wait;
+            opacity: 0.5;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        button.main-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: black;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button.main-btn:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.show { display: block; }
+        .red { border: 2px solid var(--error); background: rgba(255, 82, 82, 0.1); }
+        .green { border: 2px solid var(--accent); background: rgba(0, 230, 118, 0.1); }
+        .neutral { border: 2px solid #555; background: #222; }
+
+        pre {
+            background: #000;
+            padding: 10px;
+            color: #0f0;
+            font-size: 0.8em;
+            overflow-x: auto;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Minima</h1>
+        <p>Plan ahead, fly safe.</p>
+    </div>
+
+    <div class="info-box">
+        <strong>How it works:</strong> Check the status of any supported approach. We'll reference it to <strong>current weather conditions</strong> and your <strong>aircraft's capabilities</strong> to let you know if it's safe to fly.
+    </div>
+
+    <div class="card">
+        <label>Aerodrome (ICAO)</label>
+        <select id="airport" onchange="loadRunways()">
+            <option value="">Select Aerodrome</option>
+        </select>
+
+        <label>Runway</label>
+        <select id="runway" disabled onchange="loadApproaches()">
+            <option value="">Select Runway</option>
+        </select>
+
+        <label>Aircraft Type</label>
+        <select id="aircraft" onchange="updateUI()">
+            <option value="">Select Aircraft</option>
+        </select>
+
+        <label>Approach</label>
+        <div class="input-group">
+            <select id="approach" disabled onchange="updateUI()">
+                <option value="">Select Approach</option>
+            </select>
+            <div id="magicWand" class="magic-btn" title="Recommend Best Approach" onclick="recommendApproach()">
+                <div class="magic-icon"></div>
+            </div>
+        </div>
+
+        <button id="checkBtn" class="main-btn" onclick="checkMinima()" disabled>CHECK STATUS</button>
+
+        <div id="result" class="result"></div>
+    </div>
+</div>
+
+<script>
+    const airportSel = document.getElementById("airport");
+    const runwaySel = document.getElementById("runway");
+    const aircraftSel = document.getElementById("aircraft");
+    const approachSel = document.getElementById("approach");
+    const resultDiv = document.getElementById("result");
+    const checkBtn = document.getElementById("checkBtn");
+    const magicWand = document.getElementById("magicWand");
+
+    window.onload = () => {
+        loadAirports();
+        loadAircraft();
+    };
+
+    async function loadAirports() {
+        const res = await fetch("/airports");
+        const airports = await res.json();
+        airportSel.innerHTML = '<option value="">Select Aerodrome</option>';
+        airports.forEach(a => airportSel.add(new Option(a, a)));
+    }
+
+    async function loadAircraft() {
+        const res = await fetch("/aircraft");
+        const aircraft = await res.json();
+        aircraftSel.innerHTML = '<option value="">Select Aircraft</option>';
+        aircraft.forEach(ac => aircraftSel.add(new Option(ac, ac)));
+    }
+
+    async function loadRunways() {
+        runwaySel.disabled = true;
+        runwaySel.innerHTML = '<option value="">Loading...</option>';
+        const res = await fetch(`/runways?airport=${airportSel.value}`);
+        const runways = await res.json();
+        
+        runwaySel.innerHTML = '<option value="">Select Runway</option>';
+        runways.forEach(rw => runwaySel.add(new Option(rw, rw)));
+        runwaySel.disabled = false;
+        updateUI();
+    }
+
+    async function loadApproaches() {
+        approachSel.disabled = true;
+        approachSel.innerHTML = '<option value="">Loading...</option>';
+        const res = await fetch(`/approaches?airport=${airportSel.value}&runway=${runwaySel.value}`);
+        const approaches = await res.json();
+        
+        approachSel.innerHTML = '<option value="">Select Approach</option>';
+        approaches.forEach(ap => approachSel.add(new Option(ap.label, ap.value)));
+        approachSel.disabled = false;
+        updateUI();
+    }
+
+    function updateUI() {
+        const allSelected = airportSel.value && runwaySel.value && aircraftSel.value && approachSel.value;
+        checkBtn.disabled = !allSelected;
+
+        const canRecommend = airportSel.value && runwaySel.value && aircraftSel.value && approachSel.options.length > 1;
+        magicWand.style.display = canRecommend ? "flex" : "none";
+    }
+
+    async function recommendApproach() {
+        if(magicWand.classList.contains("loading")) return;
+
+        magicWand.classList.add("loading");
+
+        try {
+            const res = await fetch("/recommend", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    airport: airportSel.value,
+                    runway: runwaySel.value,
+                    aircraft: aircraftSel.value
+                })
+            });
+            const data = await res.json();
+
+            if (data.recommended) {
+                approachSel.value = data.recommended;
+                updateUI(); 
+            } else if (data.error) {
+                alert("Error: " + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            magicWand.classList.remove("loading");
+        }
+    }
+
+    async function checkMinima() {
+        resultDiv.innerHTML = "Fetching weather...";
+        resultDiv.className = "result show neutral";
+
+        const response = await fetch("/minima", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                airport: airportSel.value,
+                runway: runwaySel.value,
+                aircraft: aircraftSel.value,
+                approach: approachSel.value
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            resultDiv.innerHTML = `<p style="color:var(--error)">${data.error}</p>`;
+            return;
+        }
+
+        let colorClass = "neutral";
+        if (data.status.includes("BELOW")) colorClass = "red";
+        if (data.status.includes("ABOVE")) colorClass = "green";
+        if (data.status === "UNAVAILABLE") colorClass = "neutral";
+
+        resultDiv.className = `result show ${colorClass}`;
+        resultDiv.innerHTML = `
+            <p style="font-size: 1.2em; margin-top:0;"><strong>${data.status}</strong></p>
+            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>Required: <strong>${data.required}m</strong></span>
+                <span>Actual: <strong>${data.visibility}m</strong></span>
+            </div>
+            <label>Current METAR</label>
+            <pre>${data.metar}</pre>
+        `;
+    }
+</script>
+<footer style="margin-top: 40px; padding: 20px; text-align: center; font-size: 0.8em; color: #888; border-top: 1px solid var(--border); width: 100%;">
+        reach out • <a href="mailto:pineapplecrazyav@gmail.com" style="color: var(--accent); text-decoration: none;">pineapplecrazyav@gmail.com</a>
+    </footer>
+</body>
+</html>
             background-color: var(--bg-color);
             color: var(--text-main);
             display: flex;
@@ -337,3 +689,4 @@
     </footer>
 </body>
 </html>
+
