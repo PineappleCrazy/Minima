@@ -5,6 +5,7 @@ from core.metar import get_metar, get_visibility
 from core.recommend import recommend_approach
 import re
 import os
+import json  # Added import
 
 app = Flask(__name__)
 
@@ -20,8 +21,27 @@ def airports():
     data_dir = os.path.join(app.root_path, "data")
     if not os.path.exists(data_dir):
         return jsonify([])
-    airports = [f[:-5].upper() for f in os.listdir(data_dir) if f.endswith(".json")]
-    return jsonify(sorted(airports))
+    
+    airport_list = []
+    
+    # Iterate over files to find names
+    for f in os.listdir(data_dir):
+        if f.endswith(".json"):
+            code = f[:-5].upper()
+            name = ""
+            try:
+                # Try to read the "name" field from the JSON
+                with open(os.path.join(data_dir, f), 'r') as file:
+                    content = json.load(file)
+                    # Assumes the JSON might have a "name" key at the root
+                    name = content.get("name", "") 
+            except Exception:
+                pass
+            
+            airport_list.append({"code": code, "name": name})
+
+    # Sort by ICAO code
+    return jsonify(sorted(airport_list, key=lambda x: x["code"]))
 
 @app.route("/aircraft")
 def aircraft():
@@ -179,14 +199,3 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
-
-
