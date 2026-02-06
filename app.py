@@ -60,10 +60,8 @@ def approaches():
     vis_val = int(visibility) if visibility.isdigit() else 9999
 
     # --- Aircraft category ---
-    cat_type = AIRCRAFT_MAP.get(aircraft)
-    if not cat_type:
-        return jsonify([])
-
+    cat_type = AIRCRAFT_MAP.get(aircraft, "c")
+    
     approaches = []
 
     for key, minima in data.items():
@@ -165,6 +163,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
