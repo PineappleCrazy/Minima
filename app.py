@@ -120,64 +120,13 @@ def approaches():
 @app.route("/recommend", methods=["POST"])
 def recommend():
     data = request.json
-    airport = data.get("airport", "").upper()
-    runway = data.get("runway", "").upper()
-    aircraft = data.get("aircraft", "").upper()
-
-    airport_data = load_airport_data(airport)
-    category = AIRCRAFT_MAP.get(aircraft)
-
-    if not airport_data or not category:
-        return jsonify({"error": "Data not found"}), 404
-
-    # Priority ranking (lower index = more preferred)
-    priority = [
-        "il3", "il2", "il1",  # ILS Categories
-        "gl3", "gl2", "gl1", "gls", # GLS
-        "rnp-lpv", "rnp-approach", # RNP
-        "loc", "vor", "ndb" # Non-Precision
-    ]
-
-    best_value = None
-    best_rank = len(priority)
-
-    # 1. Gather all valid approach values for this runway
-    # We re-use logic from /approaches to ensure values match the frontend <options>
-    for key in airport_data.keys():
-        if category not in airport_data[key]: continue
-
-        current_value = None
-        if key.startswith("rnp"):
-            m = re.match(r"^rnp(\d{2}[LRC]?)(?:-(.*))?$", key)
-            if m and m.group(1) == runway:
-                suffix = m.group(2) or "approach"
-                current_value = f"rnp-{suffix.lower()}"
-        else:
-            m = re.match(r"^([a-z]{2,3}[123]?|gls)(\d{2}[LRC]?)$", key)
-            if m and m.group(2) == runway:
-                current_value = m.group(1)
-
-        # 2. Check priority
-        if current_value in priority:
-            rank = priority.index(current_value)
-            if rank < best_rank:
-                best_rank = rank
-                best_value = current_value
-
-    if best_value:
-        return jsonify({"recommended": best_value})
-    
-    return jsonify({"error": "No suitable approach found"}), 404
-
-@app.route("/recommend", methods=["POST"])
-def recommend():
-    data = request.json
-    airport = data["airport"]
-    runway = data["runway"]
-    aircraft = data["aircraft"]
-
-    from core.recommend import recommend_approach
-    return jsonify(recommend_approach(airport, runway, aircraft))
+    return jsonify(
+        recommend_approach(
+            data["airport"],
+            data["runway"],
+            data["aircraft"]
+        )
+    )
 
 @app.route("/minima", methods=["POST"])
 def minima():
@@ -192,6 +141,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
