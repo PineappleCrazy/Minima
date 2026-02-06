@@ -9,7 +9,7 @@
             --bg-color: #121212;
             --card-bg: #1e1e1e;
             --text-main: #e0e0e0;
-            --accent: #485BAB; /* Your signature blue */
+            --accent: #485BAB;
             --accent-hover: #5a6fc4;
             --error: #ff5252;
             --border: #333;
@@ -89,7 +89,7 @@
             flex-grow: 1;
         }
 
-        /* UPDATED: Magic Button Styles */
+        /* UPDATED: Simplified Magic Button */
         .magic-btn {
             display: none;
             align-items: center;
@@ -101,30 +101,25 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            padding: 0;
+            overflow: hidden;
         }
 
-        /* This uses your image as a mask so we can force it to be your blue color */
+        /* The icon image itself */
         .magic-icon {
             width: 24px;
             height: 24px;
-            background-color: var(--accent); /* This colors the icon */
-            mask-image: url('recommended-icon.png');
-            -webkit-mask-image: url('recommended-icon.png');
-            mask-size: contain;
-            -webkit-mask-size: contain;
-            mask-repeat: no-repeat;
-            -webkit-mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-position: center;
+            object-fit: contain;
+            pointer-events: none;
         }
 
         .magic-btn:hover {
             background: var(--accent);
+            border-color: white;
         }
 
-        .magic-btn:hover .magic-icon {
-            background-color: white; /* Icon turns white on hover background */
-        }
+        /* Optional: Inverts the image colors on hover if you use a black icon */
+        /* .magic-btn:hover .magic-icon { filter: brightness(0) invert(1); } */
 
         .magic-btn.loading {
             animation: spin 1s linear infinite;
@@ -208,7 +203,7 @@
                 <option value="">Select Approach</option>
             </select>
             <div id="magicWand" class="magic-btn" title="Recommend Best Approach" onclick="recommendApproach()">
-                <div class="magic-icon"></div>
+                <img src="recommended-icon.png" class="magic-icon" alt="✨">
             </div>
         </div>
 
