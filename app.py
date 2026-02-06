@@ -29,17 +29,20 @@ def aircraft():
 
 @app.route("/runways")
 def runways():
-    airport = request.args.get("airport", "").upper()
+    airport = request.args.get("airport", "").lower()
     data = load_airport_data(airport)
-    if not data: return jsonify([])
-    
-    # Extract unique runway numbers/letters from JSON keys (e.g., il327R -> 27R)
+    if not data:
+        return jsonify([])
+
     runways = set()
+
     for key in data.keys():
-        match = re.search(r"(\d{2}[LRC]?)$", key)
-        if match:
-            runways.add(match.group(1))
-    return jsonify(sorted(list(runways)))
+        m = re.search(r"(?:^|[a-z-])(\d{2}[LRC]?)", key)
+        if m:
+            runways.add(m.group(1))
+
+    return jsonify(sorted(runways))
+
 
 @app.route("/approaches")
 def approaches():
@@ -141,6 +144,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
