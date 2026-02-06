@@ -49,76 +49,97 @@ def approaches():
     airport = request.args.get("airport", "").lower()
     runway = request.args.get("runway", "").upper()
     aircraft = request.args.get("aircraft", "").upper()
-    data = load_airport_data(airport)
-    
-    if not data or not runway: return jsonify([])
 
-    # 1. Get current weather
+    data = load_airport_data(airport)
+    if not data or not runway:
+        return jsonify([])
+
+    # --- Weather ---
     metar = get_metar(airport.upper())
     visibility = get_visibility(metar, runway)
     vis_val = int(visibility) if visibility.isdigit() else 9999
-    
-    # 2. Identify Aircraft Category
-    from core.data import AIRCRAFT_MAP
-    cat_type = AIRCRAFT_MAP.get(aircraft, "c")
 
-    found_approaches = []
-    for key in data.keys():
-        # Handle RNP
-        if key.startswith("rnp"):
-            rnp_match = re.match(r"^rnp(\d{2}[LRC]?)(?:-(.*))?$", key)
-            if rnp_match and rnp_match.group(1) == runway:
-                suffix = rnp_match.group(2) or "approach"
-                found_approaches.append({
-                    "type": "RNP",
-                    "label": f"RNP {suffix.upper()}",
-                    "value": f"rnp-{suffix.lower()}",
-                    "minima": int(data[key].get(cat_type, 0))
-                })
+    # --- Aircraft category ---
+    cat_type = AIRCRAFT_MAP.get(aircraft)
+    if not cat_type:
+        return jsonify([])
+
+    approaches = []
+
+    for key, minima in data.items():
+        if cat_type not in minima:
             continue
 
-        # Handle ILS/GLS (Standard Prefixes)
-        match = re.match(r"^([a-z]{2,3}[123]?|gls[123]?)(\d{2}[LRC]?)$", key)
-        if match and match.group(2) == runway:
-            prefix = match.group(1)
-            label = prefix.upper()
-            if prefix.startswith("il"): label = f"ILS CAT {prefix[2]}"
-            elif prefix.startswith("gl") and len(prefix) == 4: label = f"GLS CAT {prefix[3]}"
+        required = minima.get(cat_type, 0)
+        if not isinstance(required, int) or required <= 0:
+            continue
 
-            found_approaches.append({
-                "type": label.split()[0],
-                "label": label,
-                "value": prefix,
-                "minima": int(data[key].get(cat_type, 0))
+        # =======================
+        # RNP (with suffix)
+        # =======================
+        rnp_match = re.match(rf"^rnp{runway}(?:-(.+))?$", key)
+        if rnp_match:
+            suffix = rnp_match.group(1) or "approach"
+            approaches.append({
+                "type": "RNP",
+                "label": f"RNP {suffix.upper()}",
+                "value": f"rnp-{suffix.lower()}",
+                "required": required
             })
+            continue
 
-    # 3. Sort so CAT1 comes before CAT3
-    def sort_key(item):
-        v = item["value"]
-        if v.startswith("il"): return (0, v) # ILS CAT 1, 2, 3
-        if v.startswith("gl"): return (1, v) # GLS CAT 1, 2, 3
-        return (2, v)
-    
-    sorted_list = sorted(found_approaches, key=sort_key)
+        # =======================
+        # ILS / GLS / others
+        # =======================
+        m = re.match(r"^([a-z]{2,4}[123]?)(\d{2}[LRC]?)$", key)
+        if not m or m.group(2) != runway:
+            continue
 
-    # 4. RECOMMENDATION: Pick the LOWEST CAT that is above minima
-    recommended_value = None
-    for app in sorted_list:
-        # If visibility is better than required, this is our "easiest" legal choice
-        if app["minima"] > 0 and vis_val >= app["minima"]:
-            recommended_value = app["value"]
-            break 
-    
-    # Fallback if everything is below minima or no minima defined
-    if not recommended_value and sorted_list:
-        recommended_value = sorted_list[0]["value"]
+        prefix = m.group(1)
 
-    # Final payload
-    for a in sorted_list:
-        a["recommended"] = (a["value"] == recommended_value)
-        del a["minima"] 
+        if prefix.startswith("il"):
+            label = f"ILS CAT {prefix[2]}"
+            typ = "ILS"
+        elif prefix.startswith("gl"):
+            label = f"GLS CAT {prefix[-1]}"
+            typ = "GLS"
+        else:
+            label = prefix.upper()
+            typ = label
 
-    return jsonify(sorted_list)
+        approaches.append({
+            "type": typ,
+            "label": label,
+            "value": prefix,
+            "required": required
+        })
+
+    recommended = None
+
+    ils_gls = [a for a in approaches if a["type"] in ("ILS", "GLS")]
+
+    def cat_rank(a):
+        return int(a["label"][-1])
+
+    ils_gls.sort(key=cat_rank)
+
+    for a in ils_gls:
+        if vis_val >= a["required"]:
+            recommended = a["value"]
+            break
+
+    if not recommended:
+        candidates = [a for a in approaches if vis_val >= a["required"]]
+        if candidates:
+            candidates.sort(key=lambda a: a["required"])
+            recommended = candidates[0]["value"]
+
+    for a in approaches:
+        a["recommended"] = (a["value"] == recommended)
+        del a["required"]
+
+    return jsonify(approaches)
+
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
@@ -144,6 +165,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
