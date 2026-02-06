@@ -193,7 +193,7 @@
         </select>
 
         <label>Aircraft Type</label>
-        <select id="aircraft" onchange="updateUI()">
+        <select id="aircraft" onchange="loadApproaches()">
             <option value="">Select Aircraft</option>
         </select>
 
@@ -242,6 +242,9 @@
     }
 
     async function loadRunways() {
+        approachSel.innerHTML = '<option value="">Select Approach</option>';
+        approachSel.disabled = true;
+        runwaySel.value = "";
         runwaySel.disabled = true;
         runwaySel.innerHTML = '<option value="">Loading...</option>';
         const res = await fetch(`/runways?airport=${airportSel.value}`);
@@ -274,7 +277,7 @@
         });
     
         approachSel.disabled = false;
-        updateCheckButton();
+        updateUI();
     }
 
     function updateUI() {
@@ -359,6 +362,7 @@
     </footer>
 </body>
 </html>
+
 
 
 
