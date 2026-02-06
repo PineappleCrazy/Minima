@@ -231,7 +231,16 @@
         const res = await fetch("/airports");
         const airports = await res.json();
         airportSel.innerHTML = '<option value="">Select Aerodrome</option>';
-        airports.forEach(a => airportSel.add(new Option(a, a)));
+        
+        // Updated loop to handle {code, name} object
+        airports.forEach(a => {
+            // Construct label: "EBOS (Ostend)" or just "EBOS" if no name
+            let label = a.code;
+            if (a.name && a.name.trim() !== "") {
+                label += ` (${a.name})`;
+            }
+            airportSel.add(new Option(label, a.code));
+        });
     }
 
     async function loadAircraft() {
@@ -247,6 +256,9 @@
         runwaySel.value = "";
         runwaySel.disabled = true;
         runwaySel.innerHTML = '<option value="">Loading...</option>';
+        
+        if (!airportSel.value) return; // Guard clause
+
         const res = await fetch(`/runways?airport=${airportSel.value}`);
         const runways = await res.json();
         
@@ -360,9 +372,3 @@
     </footer>
 </body>
 </html>
-
-
-
-
-
-
