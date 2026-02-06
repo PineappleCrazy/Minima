@@ -10,6 +10,7 @@
             --card-bg: #1e1e1e;
             --text-main: #e0e0e0;
             --accent: #485BAB;
+            --accent-hover: #5a6fc4;
             --error: #ff5252;
             --border: #333;
         }
@@ -66,16 +67,10 @@
             color: #888;
         }
 
-        /* Wrapper for the select + icon */
-        .select-wrapper {
-            position: relative;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-
         select {
             width: 100%;
             padding: 12px;
+            margin-bottom: 20px;
             background: #252525;
             border: 1px solid var(--border);
             color: white;
@@ -83,35 +78,51 @@
             appearance: none;
         }
 
-        /* The Magic Wand Icon */
-        .recommend-icon {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
+        /* NEW: Flex container for Approach + Button */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Make select take up available space in the group */
+        .input-group select {
+            margin-bottom: 0; /* Remove bottom margin inside group */
+            flex-grow: 1;
+        }
+
+        /* The Magic Wand Button */
+        .magic-btn {
+            display: none; /* Hidden until valid */
+            align-items: center;
+            justify-content: center;
+            width: 46px; /* Square shape */
+            background: #2c2c2c;
+            border: 1px solid var(--accent);
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1.2em;
             color: var(--accent);
-            display: none; /* Hidden until fields are ready */
+            font-size: 1.2em;
             transition: all 0.2s ease;
-            user-select: none;
         }
 
-        .recommend-icon:hover {
-            color: #fff;
-            filter: drop-shadow(0 0 5px var(--accent));
-            transform: translateY(-50%) scale(1.1);
+        .magic-btn:hover {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 10px rgba(72, 91, 171, 0.4);
         }
 
-        .recommend-icon.loading {
+        /* Spinner for the button */
+        .magic-btn.loading {
             animation: spin 1s linear infinite;
-            pointer-events: none;
-            color: #888;
+            cursor: wait;
+            border-color: #555;
+            color: #555;
+            background: #222;
         }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        @keyframes spin { 100% { transform: translateY(-50%) rotate(360deg); } }
-
-        button {
+        button.main-btn {
             width: 100%;
             padding: 15px;
             background: var(--accent);
@@ -123,7 +134,7 @@
             transition: opacity 0.2s;
         }
 
-        button:disabled {
+        button.main-btn:disabled {
             background: #444;
             color: #888;
             cursor: not-allowed;
@@ -165,35 +176,31 @@
 
     <div class="card">
         <label>Aerodrome (ICAO)</label>
-        <div class="select-wrapper">
-            <select id="airport" onchange="loadRunways()">
-                <option value="">Select Aerodrome</option>
-            </select>
-        </div>
+        <select id="airport" onchange="loadRunways()">
+            <option value="">Select Aerodrome</option>
+        </select>
 
         <label>Runway</label>
-        <div class="select-wrapper">
-            <select id="runway" disabled onchange="loadApproaches()">
-                <option value="">Select Runway</option>
-            </select>
-        </div>
+        <select id="runway" disabled onchange="loadApproaches()">
+            <option value="">Select Runway</option>
+        </select>
 
         <label>Aircraft Type</label>
-        <div class="select-wrapper">
-            <select id="aircraft" onchange="updateUI()">
-                <option value="">Select Aircraft</option>
-            </select>
-        </div>
+        <select id="aircraft" onchange="updateUI()">
+            <option value="">Select Aircraft</option>
+        </select>
 
         <label>Approach</label>
-        <div class="select-wrapper">
+        <div class="input-group">
             <select id="approach" disabled onchange="updateUI()">
                 <option value="">Select Approach</option>
             </select>
-            <span id="magicWand" class="recommend-icon" title="Recommend Best Approach" onclick="recommendApproach()">✨</span>
+            <div id="magicWand" class="magic-btn" title="Recommend Best Approach" onclick="recommendApproach()">
+                ✨
+            </div>
         </div>
 
-        <button id="checkBtn" onclick="checkMinima()" disabled>CHECK STATUS</button>
+        <button id="checkBtn" class="main-btn" onclick="checkMinima()" disabled>CHECK STATUS</button>
 
         <div id="result" class="result"></div>
     </div>
@@ -258,8 +265,9 @@
         checkBtn.disabled = !allSelected;
 
         // Enable Magic Wand if Airport, Runway, and Aircraft are ready
-        const canRecommend = airportSel.value && runwaySel.value && aircraftSel.value && !approachSel.disabled;
-        magicWand.style.display = canRecommend ? "block" : "none";
+        // AND approaches have actually loaded (length > 1 because of default option)
+        const canRecommend = airportSel.value && runwaySel.value && aircraftSel.value && approachSel.options.length > 1;
+        magicWand.style.display = canRecommend ? "flex" : "none";
     }
 
     async function recommendApproach() {
