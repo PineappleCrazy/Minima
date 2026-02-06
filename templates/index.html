@@ -66,16 +66,50 @@
             color: #888;
         }
 
+        /* Wrapper for the select + icon */
+        .select-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
         select {
             width: 100%;
             padding: 12px;
-            margin-bottom: 20px;
             background: #252525;
             border: 1px solid var(--border);
             color: white;
             border-radius: 6px;
             appearance: none;
         }
+
+        /* The Magic Wand Icon */
+        .recommend-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.2em;
+            color: var(--accent);
+            display: none; /* Hidden until fields are ready */
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .recommend-icon:hover {
+            color: #fff;
+            filter: drop-shadow(0 0 5px var(--accent));
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .recommend-icon.loading {
+            animation: spin 1s linear infinite;
+            pointer-events: none;
+            color: #888;
+        }
+
+        @keyframes spin { 100% { transform: translateY(-50%) rotate(360deg); } }
 
         button {
             width: 100%;
@@ -131,24 +165,33 @@
 
     <div class="card">
         <label>Aerodrome (ICAO)</label>
-        <select id="airport" onchange="loadRunways()">
-            <option value="">Select Aerodrome</option>
-        </select>
+        <div class="select-wrapper">
+            <select id="airport" onchange="loadRunways()">
+                <option value="">Select Aerodrome</option>
+            </select>
+        </div>
 
         <label>Runway</label>
-        <select id="runway" disabled onchange="loadApproaches()">
-            <option value="">Select Runway</option>
-        </select>
+        <div class="select-wrapper">
+            <select id="runway" disabled onchange="loadApproaches()">
+                <option value="">Select Runway</option>
+            </select>
+        </div>
 
         <label>Aircraft Type</label>
-        <select id="aircraft" onchange="updateCheckButton()">
-            <option value="">Select Aircraft</option>
-        </select>
+        <div class="select-wrapper">
+            <select id="aircraft" onchange="updateUI()">
+                <option value="">Select Aircraft</option>
+            </select>
+        </div>
 
         <label>Approach</label>
-        <select id="approach" disabled onchange="updateCheckButton()">
-            <option value="">Select Approach</option>
-        </select>
+        <div class="select-wrapper">
+            <select id="approach" disabled onchange="updateUI()">
+                <option value="">Select Approach</option>
+            </select>
+            <span id="magicWand" class="recommend-icon" title="Recommend Best Approach" onclick="recommendApproach()">✨</span>
+        </div>
 
         <button id="checkBtn" onclick="checkMinima()" disabled>CHECK STATUS</button>
 
@@ -164,6 +207,7 @@
     const approachSel = document.getElementById("approach");
     const resultDiv = document.getElementById("result");
     const checkBtn = document.getElementById("checkBtn");
+    const magicWand = document.getElementById("magicWand");
 
     window.onload = () => {
         loadAirports();
@@ -193,7 +237,7 @@
         runwaySel.innerHTML = '<option value="">Select Runway</option>';
         runways.forEach(rw => runwaySel.add(new Option(rw, rw)));
         runwaySel.disabled = false;
-        updateCheckButton();
+        updateUI();
     }
 
     async function loadApproaches() {
@@ -205,11 +249,48 @@
         approachSel.innerHTML = '<option value="">Select Approach</option>';
         approaches.forEach(ap => approachSel.add(new Option(ap.label, ap.value)));
         approachSel.disabled = false;
-        updateCheckButton();
+        updateUI();
     }
 
-    function updateCheckButton() {
-        checkBtn.disabled = !(airportSel.value && runwaySel.value && aircraftSel.value && approachSel.value);
+    function updateUI() {
+        // Enable Check button only if all selected
+        const allSelected = airportSel.value && runwaySel.value && aircraftSel.value && approachSel.value;
+        checkBtn.disabled = !allSelected;
+
+        // Enable Magic Wand if Airport, Runway, and Aircraft are ready
+        const canRecommend = airportSel.value && runwaySel.value && aircraftSel.value && !approachSel.disabled;
+        magicWand.style.display = canRecommend ? "block" : "none";
+    }
+
+    async function recommendApproach() {
+        if(magicWand.classList.contains("loading")) return;
+
+        magicWand.classList.add("loading"); // Spin animation
+
+        try {
+            const res = await fetch("/recommend", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    airport: airportSel.value,
+                    runway: runwaySel.value,
+                    aircraft: aircraftSel.value
+                })
+            });
+            const data = await res.json();
+
+            if (data.recommended) {
+                approachSel.value = data.recommended;
+                updateUI(); // Re-check button state
+                checkMinima(); // Auto-click check
+            } else if (data.error) {
+                alert("Error: " + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            magicWand.classList.remove("loading");
+        }
     }
 
     async function checkMinima() {
@@ -255,9 +336,4 @@
         reach out • <a href="mailto:pineapplecrazyav@gmail.com" style="color: var(--accent); text-decoration: none;">pineapplecrazyav@gmail.com</a>
     </footer>
 </body>
-</body>
 </html>
-
-
-
-
