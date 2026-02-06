@@ -24,6 +24,14 @@
             align-items: center;
             padding: 20px;
             margin: 0;
+
+            /* --- Added Diagonal Grid Background --- */
+            background-image: 
+                linear-gradient(45deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(-45deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px; /* Size of the grid squares */
+            background-attachment: fixed; /* Keeps the grid still while scrolling */
+            /* -------------------------------------- */
         }
 
         .container {
@@ -117,9 +125,6 @@
             background: var(--accent);
             border-color: white;
         }
-
-        /* Optional: Inverts the image colors on hover if you use a black icon */
-        /* .magic-btn:hover .magic-icon { filter: brightness(0) invert(1); } */
 
         .magic-btn.loading {
             animation: spin 1s linear infinite;
@@ -232,9 +237,7 @@
         const airports = await res.json();
         airportSel.innerHTML = '<option value="">Select Aerodrome</option>';
         
-        // Updated loop to handle {code, name} object
         airports.forEach(a => {
-            // Construct label: "EBOS (Ostend)" or just "EBOS" if no name
             let label = a.code;
             if (a.name && a.name.trim() !== "") {
                 label += `  -  ${a.name}`;
@@ -257,7 +260,7 @@
         runwaySel.disabled = true;
         runwaySel.innerHTML = '<option value="">Loading...</option>';
         
-        if (!airportSel.value) return; // Guard clause
+        if (!airportSel.value) return; 
 
         const res = await fetch(`/runways?airport=${airportSel.value}`);
         const runways = await res.json();
@@ -277,7 +280,6 @@
         approachSel.disabled = true;
         approachSel.innerHTML = '<option value="">Loading...</option>';
     
-        // Pass aircraft type so the backend can check specific minima
         const res = await fetch(`/approaches?airport=${airportSel.value}&runway=${runwaySel.value}&aircraft=${aircraftSel.value}`);
         const approaches = await res.json();
     
@@ -372,5 +374,3 @@
     </footer>
 </body>
 </html>
-
-
