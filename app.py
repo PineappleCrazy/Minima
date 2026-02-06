@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, url_for
 from core.minima import calculate_minima
 from core.data import load_airport_data, AIRCRAFT_MAP
 from core.metar import get_metar, get_visibility
+from core.recommend import recommend_approach
 import re
 import os
 
@@ -191,6 +192,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
