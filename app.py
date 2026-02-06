@@ -41,7 +41,7 @@ def runways():
 
 @app.route("/approaches")
 def approaches():
-    airport = request.args.get("airport", "").upper()
+    airport = request.args.get("airport", "").lower()
     runway = request.args.get("runway", "").upper()
     data = load_airport_data(airport)
     
@@ -53,27 +53,47 @@ def approaches():
         if key.startswith("rnp"):
             rnp_match = re.match(r"^rnp(\d{2}[LRC]?)(?:-(.*))?$", key)
             if rnp_match and rnp_match.group(1) == runway:
-                suffix = rnp_match.group(2) or "approach"
+                suffix = rnp_match.group(2) or "Approach"
                 approaches.append({
+                    "type": "RNP",
                     "label": f"RNP {suffix.upper()}",
                     "value": f"rnp-{suffix.lower()}"
                 })
             continue
 
         # Handle standard prefixes (ILS, GLS, VOR, NDB, LOC)
-        match = re.match(r"^([a-z]{2,3}[123]?|gls)(\d{2}[LRC]?)$", key)
+        match = re.match(r"^([a-z]{2,3}[123]?|gls[123]?)(\d{2}[LRC]?)$", key)
         if match and match.group(2) == runway:
             prefix = match.group(1)
+            
             if prefix.startswith("il"):
                 label = f"ILS CAT {prefix[2]}"
-            elif prefix.startswith("gl") and len(prefix) == 3:
-                label = f"GLS CAT {prefix[2]}"
+            elif prefix.startswith("gl") and len(prefix) == 4: # gls1, gls2, etc
+                label = f"GLS CAT {prefix[3]}"
             else:
                 label = prefix.upper()
-            
-            approaches.append({"label": label, "value": prefix})
 
-    return jsonify(approaches)
+            approaches.append({
+                "type": label.split()[0],
+                "label": label,
+                "value": prefix
+            })
+
+    unique_map = {a["value"]: a for a in approaches}
+    unique_list = list(unique_map.values())
+
+    def approach_sort_priority(item):
+        val = item["value"]
+        if val.startswith("il"):
+            return (0, val)
+        if val.startswith("gl"):
+            return (1, val)
+        if val.startswith("rnp"):
+            return (2, val)
+        return (3, val)
+
+    sorted_approaches = sorted(unique_list, key=approach_sort_priority)
+    return jsonify(sorted_approaches)
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
@@ -140,3 +160,4 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
