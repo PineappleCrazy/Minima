@@ -254,15 +254,27 @@
     }
 
     async function loadApproaches() {
+        if (!aircraftSel.value) {
+            approachSel.innerHTML = '<option value="">Select Aircraft First</option>';
+            return;
+        }
+    
         approachSel.disabled = true;
         approachSel.innerHTML = '<option value="">Loading...</option>';
-        const res = await fetch(`/approaches?airport=${airportSel.value}&runway=${runwaySel.value}`);
+    
+        // Pass aircraft type so the backend can check specific minima
+        const res = await fetch(`/approaches?airport=${airportSel.value}&runway=${runwaySel.value}&aircraft=${aircraftSel.value}`);
         const approaches = await res.json();
-        
+    
         approachSel.innerHTML = '<option value="">Select Approach</option>';
-        approaches.forEach(ap => approachSel.add(new Option(ap.label, ap.value)));
+        approaches.forEach(ap => {
+            const option = new Option(ap.label, ap.value);
+            if (ap.recommended) option.selected = true; // AUTO-SELECT CAT1 if weather permits
+            approachSel.add(option);
+        });
+    
         approachSel.disabled = false;
-        updateUI();
+        updateCheckButton();
     }
 
     function updateUI() {
@@ -347,5 +359,6 @@
     </footer>
 </body>
 </html>
+
 
 
