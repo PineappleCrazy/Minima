@@ -44,25 +44,27 @@ def runways():
 def approaches():
     airport = request.args.get("airport", "").lower()
     runway = request.args.get("runway", "").upper()
-    aircraft = request.args.get("aircraft", "").upper() # Added to check specific minima
+    aircraft = request.args.get("aircraft", "").upper()
     data = load_airport_data(airport)
     
     if not data or not runway: return jsonify([])
 
-    # Fetch weather once to determine recommendation
+    # 1. Get current weather
     metar = get_metar(airport.upper())
     visibility = get_visibility(metar, runway)
     vis_val = int(visibility) if visibility.isdigit() else 9999
     
-    cat_type = AIRCRAFT_MAP.get(aircraft, "c") # Default to Cat C if unknown
-    
+    # 2. Identify Aircraft Category
+    from core.data import AIRCRAFT_MAP
+    cat_type = AIRCRAFT_MAP.get(aircraft, "c")
+
     found_approaches = []
     for key in data.keys():
         # Handle RNP
         if key.startswith("rnp"):
             rnp_match = re.match(r"^rnp(\d{2}[LRC]?)(?:-(.*))?$", key)
             if rnp_match and rnp_match.group(1) == runway:
-                suffix = rnp_match.group(2) or "Approach"
+                suffix = rnp_match.group(2) or "approach"
                 found_approaches.append({
                     "type": "RNP",
                     "label": f"RNP {suffix.upper()}",
@@ -71,7 +73,7 @@ def approaches():
                 })
             continue
 
-        # Handle ILS/GLS/Other
+        # Handle ILS/GLS (Standard Prefixes)
         match = re.match(r"^([a-z]{2,3}[123]?|gls[123]?)(\d{2}[LRC]?)$", key)
         if match and match.group(2) == runway:
             prefix = match.group(1)
@@ -86,35 +88,31 @@ def approaches():
                 "minima": int(data[key].get(cat_type, 0))
             })
 
-    # Sort: ILS 1 -> 2 -> 3, then GLS, then others
+    # 3. Sort so CAT1 comes before CAT3
     def sort_key(item):
         v = item["value"]
-        if v.startswith("il"): return (0, v)
-        if v.startswith("gl"): return (1, v)
+        if v.startswith("il"): return (0, v) # ILS CAT 1, 2, 3
+        if v.startswith("gl"): return (1, v) # GLS CAT 1, 2, 3
         return (2, v)
     
     sorted_list = sorted(found_approaches, key=sort_key)
 
-    # RECOMMENDATION LOGIC:
-    # Pick the LOWEST Category (least precise) that is still ABOVE minima.
+    # 4. RECOMMENDATION: Pick the LOWEST CAT that is above minima
     recommended_value = None
-    
-    # Check ILS/GLS specifically for CAT preference
-    precision_apps = [a for a in sorted_list if a["type"] in ["ILS", "GLS"]]
-    for app in precision_apps:
-        # If visibility is better than required, this is our "easiest" valid approach
-        if vis_val >= app["minima"] and app["minima"] > 0:
+    for app in sorted_list:
+        # If visibility is better than required, this is our "easiest" legal choice
+        if app["minima"] > 0 and vis_val >= app["minima"]:
             recommended_value = app["value"]
             break 
     
-    # If all are below minima or no precision found, default to the first in list
+    # Fallback if everything is below minima or no minima defined
     if not recommended_value and sorted_list:
         recommended_value = sorted_list[0]["value"]
 
-    # Final response with recommendation flag
+    # Final payload
     for a in sorted_list:
         a["recommended"] = (a["value"] == recommended_value)
-        del a["minima"] # Clean up internal data
+        del a["minima"] 
 
     return jsonify(sorted_list)
 
@@ -183,5 +181,6 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
