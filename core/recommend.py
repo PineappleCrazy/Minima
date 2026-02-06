@@ -67,12 +67,23 @@ def recommend_approach(airport, runway, aircraft):
     candidates = []
 
     for prefix in others:
-        ok, required = is_above_minima(prefix)
-        if ok and required > 0:
-            candidates.append((required, prefix))
+        result = calculate_minima(
+            airport=airport,
+            runway=runway,
+            aircraft=aircraft,
+            approach=prefix
+        )
+
+        if result.get("status") != "ABOVE MINIMA":
+            continue
+
+        required = result.get("required")
+        if not isinstance(required, int) or required <= 0:
+            continue
+
+        candidates.append((required, prefix))
 
     if candidates:
-        # Lowest required visibility first
         candidates.sort(key=lambda x: x[0])
         return {"recommended": candidates[0][1]}
 
