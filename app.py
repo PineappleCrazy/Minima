@@ -168,6 +168,16 @@ def recommend():
     
     return jsonify({"error": "No suitable approach found"}), 404
 
+@app.route("/recommend", methods=["POST"])
+def recommend():
+    data = request.json
+    airport = data["airport"]
+    runway = data["runway"]
+    aircraft = data["aircraft"]
+
+    from core.recommend import recommend_approach
+    return jsonify(recommend_approach(airport, runway, aircraft))
+
 @app.route("/minima", methods=["POST"])
 def minima():
     data = request.json
@@ -181,6 +191,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
