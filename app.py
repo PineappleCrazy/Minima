@@ -54,27 +54,22 @@ def approaches():
     if not data or not runway:
         return jsonify([])
 
-    # --- Weather ---
+    # Weather (used only for recommendation)
     metar = get_metar(airport.upper())
     visibility = get_visibility(metar, runway)
-    vis_val = int(visibility) if visibility.isdigit() else 9999
+    vis_val = int(visibility) if visibility.isdigit() else None
 
-    # --- Aircraft category ---
-    cat_type = AIRCRAFT_MAP.get(aircraft, "c")
-    
+    # Aircraft category (OPTIONAL)
+    cat_type = AIRCRAFT_MAP.get(aircraft)
+
     approaches = []
 
+    # ------------------------------------------------
+    # 1️⃣ BUILD LIST OF ALL APPROACHES FOR THIS RUNWAY
+    # ------------------------------------------------
     for key, minima in data.items():
-        if cat_type not in minima:
-            continue
 
-        required = minima.get(cat_type, 0)
-        if not isinstance(required, int) or required <= 0:
-            continue
-
-        # =======================
-        # RNP (with suffix)
-        # =======================
+        # ---------- RNP ----------
         rnp_match = re.match(rf"^rnp{runway}(?:-(.+))?$", key)
         if rnp_match:
             suffix = rnp_match.group(1) or "approach"
@@ -82,13 +77,11 @@ def approaches():
                 "type": "RNP",
                 "label": f"RNP {suffix.upper()}",
                 "value": f"rnp-{suffix.lower()}",
-                "required": required
+                "required": minima.get(cat_type) if cat_type else None
             })
             continue
 
-        # =======================
-        # ILS / GLS / others
-        # =======================
+        # ---------- ILS / GLS / others ----------
         m = re.match(r"^([a-z]{2,4}[123]?)(\d{2}[LRC]?)$", key)
         if not m or m.group(2) != runway:
             continue
@@ -109,34 +102,57 @@ def approaches():
             "type": typ,
             "label": label,
             "value": prefix,
-            "required": required
+            "required": minima.get(cat_type) if cat_type else None
         })
 
-    recommended = None
+    if not approaches:
+        return jsonify([])
 
-    ils_gls = [a for a in approaches if a["type"] in ("ILS", "GLS")]
+    # ------------------------------------------------
+    # 2️⃣ RECOMMENDATION (ONLY IF AIRCRAFT SELECTED)
+    # ------------------------------------------------
+    recommended_value = None
 
-    def cat_rank(a):
-        return int(a["label"][-1])
+    if cat_type and vis_val is not None:
+        # Prefer ILS / GLS CAT I → CAT III
+        ils_gls = [
+            a for a in approaches
+            if a["type"] in ("ILS", "GLS")
+            and isinstance(a["required"], int)
+            and a["required"] > 0
+        ]
 
-    ils_gls.sort(key=cat_rank)
+        def cat_rank(a):
+            return int(a["label"][-1])
 
-    for a in ils_gls:
-        if vis_val >= a["required"]:
-            recommended = a["value"]
-            break
+        ils_gls.sort(key=cat_rank)
 
-    if not recommended:
-        candidates = [a for a in approaches if vis_val >= a["required"]]
-        if candidates:
-            candidates.sort(key=lambda a: a["required"])
-            recommended = candidates[0]["value"]
+        for a in ils_gls:
+            if vis_val >= a["required"]:
+                recommended_value = a["value"]
+                break
 
+        # Otherwise lowest RVR wins
+        if not recommended_value:
+            candidates = [
+                a for a in approaches
+                if isinstance(a["required"], int)
+                and a["required"] > 0
+                and vis_val >= a["required"]
+            ]
+            if candidates:
+                candidates.sort(key=lambda a: a["required"])
+                recommended_value = candidates[0]["value"]
+
+    # ------------------------------------------------
+    # 3️⃣ FINAL PAYLOAD (NO AUTO-SELECT)
+    # ------------------------------------------------
     for a in approaches:
-        a["recommended"] = (a["value"] == recommended)
-        del a["required"]
+        a["recommended"] = (a["value"] == recommended_value)
+        a.pop("required", None)
 
     return jsonify(approaches)
+
 
 
 @app.route("/recommend", methods=["POST"])
@@ -163,6 +179,7 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
