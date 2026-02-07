@@ -25,6 +25,7 @@ async def _fetch_metar(icao: str):
                         return metar_text
     except Exception:
         pass
+
     return None  # Return None when METAR is unavailable
 
 
