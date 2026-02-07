@@ -24,6 +24,14 @@ def recommend_approach(airport, runway, aircraft):
         if category not in data[key]:
             continue
 
+        # RNP approaches (e.g. rnp27R or rnp27R-ar)
+        rnp_match = re.match(rf"^rnp{runway}(?:-(.+))?$", key)
+        if rnp_match:
+            suffix = rnp_match.group(1) or "approach"
+            prefix = f"rnp-{suffix.lower()}"
+            others.append(prefix)
+            continue
+
         # ILS / GLS
         if key.startswith(("il", "gl")) and key.endswith(runway):
             prefix = key[:-len(runway)]
