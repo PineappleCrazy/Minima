@@ -71,7 +71,7 @@ def calculate_minima(airport, runway, aircraft, approach):
     if required == 0:
         status = "UNAVAILABLE"
     else:
-        status = "ABOVE MINIMA"
+        status = "GO FOR IT!"
         if str(visibility).isdigit() and int(visibility) < required:
             status = "BELOW MINIMA"
 
