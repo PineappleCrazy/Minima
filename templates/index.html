@@ -13,6 +13,7 @@
             --accent-hover: #5a6fc4;
             --error: #ff5252;
             --border: #333;
+            --warning: #ffa726;
         }
 
         body {
@@ -163,6 +164,7 @@
         .red { border: 2px solid var(--error); background: rgba(255, 82, 82, 0.1); }
         .green { border: 2px solid var(--accent); background: rgba(0, 230, 118, 0.1); }
         .neutral { border: 2px solid #555; background: #222; }
+        .warning { border: 2px solid var(--warning); background: rgba(255, 167, 38, 0.1); }
 
         pre {
             background: #000;
@@ -356,17 +358,32 @@
         if (data.status.includes("BELOW")) colorClass = "red";
         if (data.status.includes("ABOVE")) colorClass = "green";
         if (data.status === "UNAVAILABLE") colorClass = "neutral";
+        if (data.status === "METAR UNAVAILABLE") colorClass = "warning";
 
         resultDiv.className = `result show ${colorClass}`;
-        resultDiv.innerHTML = `
-            <p style="font-size: 1.2em; margin-top:0;"><strong>${data.status}</strong></p>
-            <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
-                <span>Required: <strong>${data.required}m</strong></span>
-                <span>Actual: <strong>${data.visibility}m</strong></span>
-            </div>
-            <label>Current METAR</label>
-            <pre>${data.metar}</pre>
-        `;
+        
+        // Different display for METAR unavailable
+        if (data.status === "METAR UNAVAILABLE") {
+            resultDiv.innerHTML = `
+                <p style="font-size: 1.2em; margin-top:0;"><strong>${data.status}</strong></p>
+                <p style="margin: 10px 0;">No current weather data is available for this aerodrome. You can still proceed with your flight planning, but verify actual weather conditions through other sources.</p>
+                <div style="margin-top: 15px;">
+                    <span>Required visibility: <strong>${data.required}m</strong></span>
+                </div>
+                <label style="margin-top: 15px;">METAR Status</label>
+                <pre>${data.metar}</pre>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <p style="font-size: 1.2em; margin-top:0;"><strong>${data.status}</strong></p>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span>Required: <strong>${data.required}m</strong></span>
+                    <span>Actual: <strong>${data.visibility}m</strong></span>
+                </div>
+                <label>Current METAR</label>
+                <pre>${data.metar}</pre>
+            `;
+        }
     }
 </script>
 <footer style="margin-top: 40px; padding: 20px; text-align: center; font-size: 0.8em; color: #888; border-top: 1px solid var(--border); width: 100%;">
@@ -374,7 +391,3 @@
     </footer>
 </body>
 </html>
-
-
-
-
