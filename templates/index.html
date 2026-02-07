@@ -498,7 +498,7 @@
 
         let colorClass = "neutral";
         if (data.status.includes("BELOW")) colorClass = "red";
-        if (data.status.includes("GO FOR IT")) colorClass = "green";
+        if (data.status === "GO FOR IT!") colorClass = "green";
         if (data.status === "UNAVAILABLE") colorClass = "neutral";
         if (data.status === "METAR UNAVAILABLE") colorClass = "warning";
 
