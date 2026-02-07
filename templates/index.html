@@ -321,7 +321,16 @@
 
             if (data.recommended) {
                 approachSel.value = data.recommended;
-                updateUI(); 
+                updateUI();
+                
+                // Show notification if METAR was unavailable
+                if (data.metar_unavailable) {
+                    resultDiv.className = "result show warning";
+                    resultDiv.innerHTML = `
+                        <p style="font-size: 1.1em; margin-top:0;"><strong>⚠️ Recommendation Made</strong></p>
+                        <p style="margin: 10px 0;">${data.message || 'No METAR available - recommended approach has lowest visibility requirement'}</p>
+                    `;
+                }
             } else if (data.error) {
                 alert("Error: " + data.error);
             }
@@ -366,7 +375,7 @@
         if (data.status === "METAR UNAVAILABLE") {
             resultDiv.innerHTML = `
                 <p style="font-size: 1.2em; margin-top:0;"><strong>${data.status}</strong></p>
-                <p style="margin: 10px 0;">No weather data available - we suggest referencing nearby aerodromes for weather information.</p>
+                <p style="margin: 10px 0;">No current weather data is available for this aerodrome. You can still proceed with your flight planning, but verify actual weather conditions through other sources.</p>
                 <div style="margin-top: 15px;">
                     <span>Required visibility: <strong>${data.required}m</strong></span>
                 </div>
@@ -391,4 +400,3 @@
     </footer>
 </body>
 </html>
-
