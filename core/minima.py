@@ -1,5 +1,6 @@
 from core.metar import get_metar, get_visibility
 from core.data import load_airport_data, AIRCRAFT_MAP
+from core.wind import parse_wind_data, calculate_wind_components, get_runway_heading
 
 def calculate_minima(airport, runway, aircraft, approach):
     airport = airport.lower()
@@ -35,10 +36,37 @@ def calculate_minima(airport, runway, aircraft, approach):
             "required": required,
             "visibility": "N/A",
             "status": "METAR UNAVAILABLE",
-            "metar": "No METAR data available for this aerodrome"
+            "metar": "No METAR data available for this aerodrome",
+            "wind": None
         }
     
     visibility = get_visibility(metar, runway)
+
+    # Calculate wind components
+    wind_data = None
+    wind_dir, wind_spd, wind_gust = parse_wind_data(metar)
+    runway_hdg = get_runway_heading(runway)
+    
+    if wind_dir is not None and wind_spd is not None and runway_hdg is not None:
+        hw, xw = calculate_wind_components(wind_spd, wind_dir, runway_hdg)
+        
+        wind_data = {
+            "direction": wind_dir,
+            "speed": wind_spd,
+            "gust": wind_gust,
+            "headwind": round(hw, 1),
+            "crosswind": round(xw, 1),
+            "variable": False
+        }
+    elif wind_spd is not None:  # Variable wind (VRB)
+        wind_data = {
+            "direction": "VRB",
+            "speed": wind_spd,
+            "gust": wind_gust,
+            "headwind": None,
+            "crosswind": None,
+            "variable": True
+        }
 
     if required == 0:
         status = "UNAVAILABLE"
@@ -53,5 +81,6 @@ def calculate_minima(airport, runway, aircraft, approach):
         "required": required,
         "visibility": visibility,
         "status": status,
-        "metar": metar
+        "metar": metar,
+        "wind": wind_data
     }
