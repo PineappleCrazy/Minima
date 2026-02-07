@@ -192,7 +192,7 @@
         .visibility-value {
             font-size: 1.3em;
             font-weight: bold;
-            color: var(--accent);
+            color: white;
         }
 
         .wind-components {
@@ -498,7 +498,7 @@
 
         let colorClass = "neutral";
         if (data.status.includes("BELOW")) colorClass = "red";
-        if (data.status.includes("ABOVE")) colorClass = "green";
+        if (data.status.includes("GO FOR IT")) colorClass = "green";
         if (data.status === "UNAVAILABLE") colorClass = "neutral";
         if (data.status === "METAR UNAVAILABLE") colorClass = "warning";
 
