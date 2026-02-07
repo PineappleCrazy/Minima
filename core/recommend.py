@@ -34,12 +34,17 @@ def recommend_approach(airport, runway, aircraft):
             prefix = key[:-len(runway)]
             others.append(prefix)
 
+    # Check if we have any approaches at all
+    if not ils_gls and not others:
+        return {"error": "No approaches available for this runway"}
+
     # --- Check if METAR is available ---
+    test_prefix = ils_gls[0] if ils_gls else others[0]
     test_result = calculate_minima(
         airport=airport,
         runway=runway,
         aircraft=aircraft,
-        approach=ils_gls[0] if ils_gls else (others[0] if others else "")
+        approach=test_prefix
     )
     
     metar_unavailable = test_result.get("status") == "METAR UNAVAILABLE"
@@ -60,6 +65,12 @@ def recommend_approach(airport, runway, aircraft):
     if metar_unavailable:
         all_approaches = []
         
+        # Prioritize ILS/GLS approaches first (CAT I → CAT III)
+        def cat_rank(prefix):
+            if prefix.startswith("il"): return int(prefix[2])
+            if prefix.startswith("gl"): return int(prefix[3])
+            return 999  # Non-ILS/GLS gets low priority
+        
         # Collect all ILS/GLS approaches with their requirements
         for prefix in ils_gls:
             result = calculate_minima(
@@ -70,7 +81,7 @@ def recommend_approach(airport, runway, aircraft):
             )
             required = result.get("required", 0)
             if isinstance(required, int) and required > 0:
-                all_approaches.append((required, prefix))
+                all_approaches.append((cat_rank(prefix), required, prefix))
         
         # Collect all other approaches with their requirements
         for prefix in others:
@@ -82,13 +93,13 @@ def recommend_approach(airport, runway, aircraft):
             )
             required = result.get("required", 0)
             if isinstance(required, int) and required > 0:
-                all_approaches.append((required, prefix))
+                all_approaches.append((999, required, prefix))
         
         if all_approaches:
-            # Sort by lowest requirement
-            all_approaches.sort(key=lambda x: x[0])
+            # Sort by: 1) ILS/GLS category (lower is better), 2) lowest requirement
+            all_approaches.sort(key=lambda x: (x[0], x[1]))
             return {
-                "recommended": all_approaches[0][1],
+                "recommended": all_approaches[0][2],
                 "metar_unavailable": True,
                 "message": "No METAR available - recommended approach has lowest visibility requirement"
             }
