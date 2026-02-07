@@ -327,7 +327,7 @@
                 if (data.metar_unavailable) {
                     resultDiv.className = "result show warning";
                     resultDiv.innerHTML = `
-                        <p style="font-size: 1.1em; margin-top:0;"><strong>⚠️ Recommendation Made</strong></p>
+                        <p style="font-size: 1.1em; margin-top:0;"><strong>⚠️ No weather data</strong></p>
                         <p style="margin: 10px 0;">${data.message || 'No METAR available - recommended approach has lowest visibility requirement'}</p>
                     `;
                 }
@@ -400,3 +400,4 @@
     </footer>
 </body>
 </html>
+
