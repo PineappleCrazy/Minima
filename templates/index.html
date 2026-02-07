@@ -166,6 +166,37 @@
         .neutral { border: 2px solid #555; background: #222; }
         .warning { border: 2px solid var(--warning); background: rgba(255, 167, 38, 0.1); }
 
+        .wind-components {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+        }
+
+        .wind-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wind-label {
+            font-size: 0.75em;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .wind-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .headwind { color: #4CAF50; }
+        .tailwind { color: #ff5252; }
+        .crosswind { color: #ffa726; }
+
         pre {
             background: #000;
             padding: 10px;
@@ -341,6 +372,78 @@
         }
     }
 
+    function formatWindComponents(wind) {
+        if (!wind) return '';
+        
+        if (wind.variable) {
+            let windText = `<div class="wind-components">
+                <div class="wind-item">
+                    <span class="wind-label">Wind</span>
+                    <span class="wind-value">VRB ${wind.speed}kt</span>
+                </div>`;
+            
+            if (wind.gust) {
+                windText += `
+                <div class="wind-item">
+                    <span class="wind-label">Gusting</span>
+                    <span class="wind-value">${wind.gust}kt</span>
+                </div>`;
+            }
+            
+            windText += `</div>
+                <p style="font-size: 0.85em; color: #ffa726; margin: 10px 0;">⚠️ Wind is variable - component calculations unavailable</p>`;
+            return windText;
+        }
+        
+        let html = '<div class="wind-components">';
+        
+        // Headwind/Tailwind
+        const hw = wind.headwind;
+        if (hw >= 0) {
+            html += `
+                <div class="wind-item">
+                    <span class="wind-label">Headwind</span>
+                    <span class="wind-value headwind">${Math.abs(hw).toFixed(1)}kt</span>
+                </div>`;
+        } else {
+            html += `
+                <div class="wind-item">
+                    <span class="wind-label">Tailwind</span>
+                    <span class="wind-value tailwind">${Math.abs(hw).toFixed(1)}kt</span>
+                </div>`;
+        }
+        
+        // Crosswind
+        const xw = wind.crosswind;
+        const xwDir = xw > 0 ? 'Right' : xw < 0 ? 'Left' : '';
+        html += `
+            <div class="wind-item">
+                <span class="wind-label">Crosswind ${xwDir}</span>
+                <span class="wind-value crosswind">${Math.abs(xw).toFixed(1)}kt</span>
+            </div>`;
+        
+        // Wind direction and speed
+        html += `
+            <div class="wind-item">
+                <span class="wind-label">Wind From</span>
+                <span class="wind-value">${wind.direction}°</span>
+            </div>`;
+        
+        html += `
+            <div class="wind-item">
+                <span class="wind-label">Wind Speed</span>
+                <span class="wind-value">${wind.speed}kt</span>
+            </div>`;
+        
+        html += '</div>';
+        
+        if (wind.gust) {
+            html += `<p style="font-size: 0.85em; color: #ffa726; margin: 10px 0;">Gusting to ${wind.gust}kt</p>`;
+        }
+        
+        return html;
+    }
+
     async function checkMinima() {
         resultDiv.innerHTML = "Fetching weather...";
         resultDiv.className = "result show neutral";
@@ -389,6 +492,7 @@
                     <span>Required: <strong>${data.required}m</strong></span>
                     <span>Actual: <strong>${data.visibility}m</strong></span>
                 </div>
+                ${formatWindComponents(data.wind)}
                 <label>Current METAR</label>
                 <pre>${data.metar}</pre>
             `;
@@ -400,4 +504,3 @@
     </footer>
 </body>
 </html>
-
