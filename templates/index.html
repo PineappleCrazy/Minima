@@ -498,7 +498,7 @@
 
         let colorClass = "neutral";
         if (data.status.includes("BELOW")) colorClass = "red";
-        if (data.status === "GO FOR IT!") colorClass = "green";
+        if (data.status.includes("ABOVE")) colorClass = "green";
         if (data.status === "UNAVAILABLE") colorClass = "neutral";
         if (data.status === "METAR UNAVAILABLE") colorClass = "warning";
 
@@ -516,8 +516,11 @@
                 <pre>${data.metar}</pre>
             `;
         } else {
+            // Display "GO FOR IT!" instead of "ABOVE MINIMA" for better UX
+            const displayStatus = data.status === "ABOVE MINIMA" ? "GO FOR IT!" : data.status;
+            
             resultDiv.innerHTML = `
-                <p style="font-size: 1.2em; margin-top:0;"><strong>${data.status}</strong></p>
+                <p style="font-size: 1.2em; margin-top:0;"><strong>${displayStatus}</strong></p>
                 <div class="visibility-box">
                     <div class="visibility-item">
                         <span class="visibility-label">Required</span>
