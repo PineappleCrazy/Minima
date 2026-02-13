@@ -10,7 +10,7 @@ import json  # Added import
 app = Flask(__name__)
 
 # Valid instrument approach prefixes
-APPROACH_PREFIX_PATTERN = r"^(il[123]|gl[s123]|vor|ndb|loc|rnp)"
+APPROACH_PREFIX_PATTERN = r"^(il[123]|gl[123]|vor|ndb|loc|rnp|par)"
 
 @app.route("/")
 def index():
@@ -84,9 +84,6 @@ def approaches():
 
     approaches = []
 
-    # ------------------------------------------------
-    # 1️⃣ BUILD LIST OF ALL APPROACHES FOR THIS RUNWAY
-    # ------------------------------------------------
     for key, minima in data.items():
 
         # ---------- RNP ----------
@@ -199,3 +196,4 @@ def minima():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
